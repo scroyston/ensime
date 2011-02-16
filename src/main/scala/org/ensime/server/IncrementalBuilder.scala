@@ -44,6 +44,21 @@ class IncrementalBuilder(project: Project, protocol: ProtocolConversions, config
 
   private val settings = new Settings(Console.println)
   settings.processArguments(config.builderArgs, false)
+  
+  private val MainSrcEntry = """(.*)/src/main.*""".r
+  private val GenSrcEntry = """(.*)/src/gen.*""".r
+  private val TestSrcEntry = """(.*)/src/test.*""".r
+
+  private def targetDir(srcDir: String): String = srcDir match {
+    case MainSrcEntry(prefix) => prefix + "/target/classes"
+    case GenSrcEntry(prefix) => prefix + "/target/classes"
+    case TestSrcEntry(prefix) => prefix + "/target/test-classes"
+  }
+
+  private val outputDirs = settings.outputDirs
+  config.sourceRoots.foreach(srcDir => outputDirs.add(srcDir.getCanonicalPath, targetDir(srcDir.getCanonicalPath)))
+  //settings.OutputSetting(outputDirs, config.target.map(_.getCanonicalPath).getOrElse(""))
+
   private val reporter = new PresentationReporter(new UserMessages{
       override def showError(str:String){
 	project ! SendBackgroundMessageEvent(MsgCompilerUnexpectedError, Some(str))
